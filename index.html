@@ -1,215 +1,331 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
-import { useRef, useState } from "react";
-import { OfficeCanvas } from "@/components/office/OfficeCanvas";
-import { createPeople, DESKS, MANAGER_DESK, walk, type Person } from "@/components/office/world";
-import { deliverProjectFn, planProjectFn, writeFileFn } from "@/lib/team.functions";
-import type { ProjectPlan } from "@/lib/team.server";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
-
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "المكتب الذكي — فريق يبني مشروعك كاملاً" },
-      { name: "description", content: "فريق ذكاء اصطناعي يخطط ويبني مشاريع ويب كبيرة متعددة الملفات ويسلّمك رابطاً مباشراً." },
-      { property: "og:title", content: "المكتب الذكي" },
-      { property: "og:description", content: "فريق ذكاء اصطناعي يبني مشروعك ويسلّمك رابطاً مباشراً." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
-  component: Office,
-});
-
-type FileState = { path: string; status: "wait" | "work" | "done" | "fail"; content?: string };
-type Phase = "idle" | "meeting" | "building" | "ready" | "delivered";
-const WORKERS = ["architect", "designer", "frontend", "qa"];
-const ROLE_AR: Record<string, string> = { architect: "المعماري", designer: "المصمم", frontend: "المطوّر", qa: "المختبر" };
-
-function Office() {
-  const people = useRef<Person[]>(createPeople());
-  const [brief, setBrief] = useState("");
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [plan, setPlan] = useState<ProjectPlan | null>(null);
-  const [files, setFiles] = useState<FileState[]>([]);
-  const [error, setError] = useState("");
-  const [link, setLink] = useState("");
-  const [copied, setCopied] = useState(false);
-
-  const plan$ = useServerFn(planProjectFn);
-  const write$ = useServerFn(writeFileFn);
-  const deliver$ = useServerFn(deliverProjectFn);
-
-  const get = (id: string) => people.current.find((p) => p.id === id)!;
-  const act = (id: string, a: Person["activity"]) => { get(id).activity = a; };
-  const toMeeting = () => people.current.forEach((p) => { walk(p, p.seat, "meeting"); p.activity = p.id === "manager" ? "talk" : "listen"; });
-  const toDesks = () => people.current.forEach((p) => {
-    walk(p, p.home, p.id === "manager" ? "manager" : "work");
-    p.activity = "type";
-  });
-
-  const run = async () => {
-    setError(""); setLink(""); setPlan(null); setFiles([]);
-    setPhase("meeting");
-    toMeeting();
-    let speaker = 0;
-    const talkTimer = setInterval(() => {
-      const ids = ["manager", ...WORKERS];
-      ids.forEach((id, i) => act(id, i === speaker ? "talk" : "listen"));
-      speaker = (speaker + 1) % ids.length;
-    }, 1400);
-    let p: ProjectPlan;
-    try {
-      p = await plan$({ data: { brief } });
-    } catch {
-      clearInterval(talkTimer); toDesks(); setPhase("idle");
-      setError("تعذّر التخطيط للمشروع. حاول مجدداً بعد قليل.");
-      return;
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>المكتب الذكي — شركة برمجيات افتراضية</title>
+  <style>
+    :root {
+      --primary: #065f46;
+      --primary-hover: #047857;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
     }
-    clearInterval(talkTimer);
-    setPlan(p);
-    const list: FileState[] = p.files.map((f) => ({ path: f.path, status: "wait" }));
-    setFiles(list);
-    setPhase("building");
-    toDesks();
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6; }
+    .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+    header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+    header h1 { font-size: 1.7rem; color: var(--primary); font-weight: 800; }
+    header p { color: var(--muted); font-size: 0.95rem; }
 
-    const results = [...list];
-    let next = 0;
-    const worker = async (slot: number) => {
-      while (next < results.length) {
-        const i = next++;
-        const id = WORKERS[slot % WORKERS.length]!;
-        act(id, "type");
-        results[i] = { ...results[i]!, status: "work" };
-        setFiles([...results]);
-        try {
-          const { content } = await write$({ data: { brief, plan: p, path: results[i]!.path } });
-          results[i] = { ...results[i]!, status: "done", content };
-        } catch {
-          results[i] = { ...results[i]!, status: "fail" };
-        }
-        setFiles([...results]);
-        // Quick check-in with the manager between files.
-        if (slot === 3 && next < results.length) {
-          const qa = get("qa");
-          walk(qa, { x: MANAGER_DESK.x + 40, y: MANAGER_DESK.y + 30 }, "manager");
-          act("manager", "talk"); qa.activity = "talk";
-          setTimeout(() => { walk(qa, qa.home, "work"); qa.activity = "type"; act("manager", "type"); }, 2200);
-        }
-      }
-    };
-    await Promise.all([0, 1, 2, 3, 4, 5].map(worker));
-    people.current.forEach((pp) => (pp.activity = "idle"));
-    setPhase("ready");
-  };
+    .ceo-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+    .ceo-box label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem; }
+    .input-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .input-row input { flex: 1; min-width: 240px; padding: 11px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.95rem; }
+    .btn { background: var(--primary); color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.95rem; transition: 0.2s; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-outline { background: #fff; color: var(--text); border: 1px solid #cbd5e1; }
+    .btn-outline:hover { background: #f1f5f9; }
 
-  const retryFailed = async () => {
-    if (!plan) return;
-    setPhase("building");
-    toDesks();
-    const results = [...files];
-    await Promise.all(results.map(async (f, i) => {
-      if (f.status !== "fail") return;
-      results[i] = { ...f, status: "work" }; setFiles([...results]);
-      try {
-        const { content } = await write$({ data: { brief, plan, path: f.path } });
-        results[i] = { ...f, status: "done", content };
-      } catch { results[i] = { ...f, status: "fail" }; }
-      setFiles([...results]);
-    }));
-    setPhase("ready");
-  };
+    .meeting-banner { display: none; background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; }
 
-  const deliver = useMutation({
-    mutationFn: () => deliver$({ data: {
-      title: plan?.title ?? "Project", brief,
-      files: files.filter((f) => f.status === "done" && f.content).map((f) => ({ path: f.path, content: f.content! })),
-    } }),
-    onSuccess: ({ id }) => {
-      setLink(`${window.location.origin}/p/${id}/index.html`);
-      setPhase("delivered");
-      people.current.forEach((pp) => walk(pp, pp.seat, "meeting"));
-      people.current.forEach((pp) => (pp.activity = "talk"));
-      setTimeout(() => toDesks(), 3500);
-    },
-    onError: () => setError("تعذّر تسليم المشروع. حاول مرة أخرى."),
-  });
+    .office-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .desk { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; transition: 0.3s; }
+    .desk.active { border-color: var(--primary); box-shadow: 0 4px 12px rgba(6, 95, 70, 0.08); }
+    .desk-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .dept { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+    .badge { font-size: 0.75rem; padding: 3px 10px; border-radius: 99px; font-weight: 600; background: #f1f5f9; color: #475569; }
+    .badge.working { background: #d1fae5; color: #065f46; }
+    .badge.meeting { background: #fef3c7; color: #92400e; }
+    .desk h3 { font-size: 1.05rem; margin-bottom: 2px; }
+    .role { font-size: 0.82rem; color: var(--muted); margin-bottom: 10px; }
+    .task-box { background: #f8fafc; border-radius: 8px; padding: 10px; font-size: 0.85rem; color: #334155; border: 1px solid #f1f5f9; }
 
-  const done = files.filter((f) => f.status === "done").length;
-  const failed = files.filter((f) => f.status === "fail").length;
-  const busy = phase === "meeting" || phase === "building";
+    .delivery { display: none; background: var(--card); border: 2px solid #10b981; border-radius: 16px; padding: 20px; flex-direction: column; gap: 20px; }
+    .delivery-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+    .delivery-header h2 { color: var(--primary); font-size: 1.2rem; }
+    .actions { display: flex; gap: 8px; }
 
-  return (
-    <main dir="rtl" className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <section className="space-y-3">
-          <h1 className="font-display text-2xl font-bold">المكتب الذكي</h1>
-          <OfficeCanvas people={people} />
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {phase === "idle" && "الفريق جاهز. اكتب فكرة مشروعك وابدأ."}
-            {phase === "meeting" && "الفريق في الاجتماع يخطط لهيكل المشروع…"}
-            {phase === "building" && `الفريق ينفّذ الملفات بالتوازي — ${done} من ${files.length}`}
-            {phase === "ready" && "اكتمل التنفيذ. المشروع جاهز للتسليم."}
-            {phase === "delivered" && "تم التسليم! رابط المشروع جاهز للمشاركة."}
-          </p>
-        </section>
+    .split-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    .panel h4 { margin-bottom: 8px; font-size: 0.92rem; }
+    iframe { width: 100%; height: 420px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+    textarea.code-box { width: 100%; height: 420px; background: #0f172a; color: #6ee7b7; border: none; border-radius: 10px; padding: 14px; font-family: monospace; font-size: 0.82rem; direction: ltr; resize: vertical; }
 
-        <aside className="space-y-4 rounded-xl border border-border bg-card p-4">
-          <label htmlFor="brief" className="text-sm font-semibold">فكرة المشروع</label>
-          <Textarea id="brief" value={brief} onChange={(e) => setBrief(e.target.value)} disabled={busy} rows={6}
-            placeholder="مثال: متجر إلكتروني لبيع القهوة بسلة مشتريات، صفحة منتجات، فلترة، ولوحة تحكم بسيطة…" />
-          <Button className="w-full" onClick={run} disabled={busy || brief.trim().length < 3}>
-            {busy ? "الفريق يعمل…" : phase === "idle" ? "ابدأ المشروع" : "مشروع جديد"}
-          </Button>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+    .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+    .report-card { padding: 14px; border-radius: 10px; font-size: 0.88rem; }
+    .report-done { background: #ecfdf5; color: #064e3b; }
+    .report-todo { background: #f1f5f9; color: #1e293b; }
+    .report-card h4 { margin-bottom: 8px; }
+    .report-card ul { padding-right: 18px; display: flex; flex-direction: column; gap: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>المكتب الذكي</h1>
+      <p>أنت المدير التنفيذي. اكتب فكرتك، والفريق يبحث ويصمم ويبرمج ويسلّمك موقع HTML حقيقياً.</p>
+    </header>
 
-          {plan && (
-            <div className="space-y-2">
-              <h2 className="font-semibold">{plan.title}</h2>
-              <p className="text-sm text-muted-foreground">{plan.summary}</p>
-              <Progress value={files.length ? (done / files.length) * 100 : 0} />
-              <ul className="max-h-64 space-y-1 overflow-auto text-sm" dir="ltr">
-                {files.map((f, i) => (
-                  <li key={f.path} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded bg-muted px-2 py-1">
-                    <span className="truncate font-mono">{f.path}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground" dir="rtl">
-                      {f.status === "wait" && "بالانتظار"}
-                      {f.status === "work" && `${ROLE_AR[WORKERS[i % 4]!]} يكتب…`}
-                      {f.status === "done" && "✓ جاهز"}
-                      {f.status === "fail" && "تعذّر"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {phase === "ready" && failed > 0 && (
-            <Button variant="outline" className="w-full" onClick={retryFailed}>إعادة كتابة الملفات المتعذّرة ({failed})</Button>
-          )}
-          {(phase === "ready" || phase === "delivered") && done > 0 && !link && (
-            <Button size="lg" className="h-14 w-full bg-accent-strong text-lg text-primary-foreground hover:bg-accent-strong/90"
-              onClick={() => deliver.mutate()} disabled={deliver.isPending}>
-              {deliver.isPending ? "جارٍ التسليم…" : "تسليم المشروع"}
-            </Button>
-          )}
-          {link && (
-            <div className="space-y-2 rounded-lg border border-border bg-muted p-3">
-              <p className="text-sm font-semibold">رابط المشروع المباشر</p>
-              <a href={link} target="_blank" rel="noreferrer" dir="ltr" className="block truncate text-sm text-primary underline">{link}</a>
-              <div className="flex gap-2">
-                <Button asChild className="flex-1"><a href={link} target="_blank" rel="noreferrer">فتح المشروع</a></Button>
-                <Button variant="outline" className="flex-1" onClick={() => { void navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>
-                  {copied ? "تم النسخ" : "نسخ الرابط"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </aside>
+    <div class="ceo-box">
+      <label for="ideaInput">فكرة المشروع المطلوب تنفيذه:</label>
+      <div class="input-row">
+        <input id="ideaInput" type="text" placeholder="مثال: متجر قهوة مختصة، أو موقع عيادة أسنان، أو منصة دورات..." />
+        <button id="startBtn" class="btn" onclick="startProject()">ابدأ تنفيذ المشروع</button>
       </div>
-    </main>
-  );
-}
+    </div>
+
+    <div id="meetingBanner" class="meeting-banner"></div>
+
+    <div class="office-grid" id="officeGrid"></div>
+
+    <div id="deliveryBox" class="delivery">
+      <div class="delivery-header">
+        <h2>تم إنجاز المشروع وتسليمه بلغة HTML</h2>
+        <div class="actions">
+          <button id="copyBtn" class="btn btn-outline" onclick="copyCode()">نسخ كود HTML</button>
+          <button class="btn" onclick="downloadCode()">تحميل index.html</button>
+        </div>
+      </div>
+
+      <div class="split-view">
+        <div class="panel">
+          <h4>معاينة الموقع الحقيقي:</h4>
+          <iframe id="previewFrame"></iframe>
+        </div>
+        <div class="panel">
+          <h4>كود HTML الكامل (جاهز للاستخدام):</h4>
+          <textarea id="codeOutput" class="code-box" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="report-grid">
+        <div class="report-card report-done">
+          <h4>ما تم إنجازه بالتفصيل:</h4>
+          <ul id="doneList"></ul>
+        </div>
+        <div class="report-card report-todo">
+          <h4>ما تبقى لإكمال المشروع وتطويره مستقبلاً:</h4>
+          <ul id="todoList"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const team = [
+      { id: "res", name: "سارة", role: "باحثة وجمع محتوى", dept: "البحث والتحليل", status: "idle", task: "جالسة على مكتبها بانتظار فكرة المشروع" },
+      { id: "des", name: "خالد", role: "مصمم واجهات UI/UX", dept: "التصميم", status: "idle", task: "جاهز لتخطيط الأقسام والألوان" },
+      { id: "dev", name: "عمر", role: "مطور HTML / CSS / JS", dept: "التطوير", status: "idle", task: "جاهز لبناء الكود الفعلي" },
+      { id: "qa",  name: "نورة", role: "مختبرة جودة QA", dept: "الجودة والتسليم", status: "idle", task: "جاهزة لفحص الموقع قبل التسليم" }
+    ];
+
+    let generatedHtml = "";
+
+    function renderOffice() {
+      const grid = document.getElementById("officeGrid");
+      grid.innerHTML = team.map(emp => {
+        const badgeText = emp.status === "working" ? "يعمل بتركيز" : emp.status === "meeting" ? "في اجتماع مختصر" : "على مكتبه";
+        return `
+          <div class="desk ${emp.status !== 'idle' ? 'active' : ''}">
+            <div class="desk-top">
+              <span class="dept">${emp.dept}</span>
+              <span class="badge ${emp.status}">${badgeText}</span>
+            </div>
+            <h3>${emp.name}</h3>
+            <div class="role">${emp.role}</div>
+            <div class="task-box">${emp.task}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function buildRealSite(idea) {
+      const title = idea.trim();
+      const isShop = /متجر|بيع|قهوة|مطعم|منتج|تسوق|كافيه/.test(title);
+      const isClinic = /عيادة|طبيب|صحة|مستشفى|أسنان/.test(title);
+      const color = isShop ? "#065f46" : isClinic ? "#0369a1" : "#1e293b";
+      const accent = isShop ? "#10b981" : isClinic ? "#0284c7" : "#2563eb";
+
+      const sectionHtml = isShop ? `
+        <div class="card"><h3>المنتج المميز الأول</h3><p>جودة عالية وتجهيز سريع يناسب ذوقك اليومي.</p><span class="price">85 ر.س</span><button onclick="selectItem('المنتج المميز الأول')">اطلب الآن</button></div>
+        <div class="card"><h3>الباقة المتكاملة</h3><p>تشكيلة مختارة بعناية مع توصيل مجاني وسريع.</p><span class="price">160 ر.س</span><button onclick="selectItem('الباقة المتكاملة')">اطلب الآن</button></div>
+        <div class="card"><h3>باقة الضيافة</h3><p>مثالية للمناسبات والجمعات مع تغليف فاخر.</p><span class="price">240 ر.س</span><button onclick="selectItem('باقة الضيافة')">اطلب الآن</button></div>
+      ` : isClinic ? `
+        <div class="card"><h3>الفحص والاستشارة</h3><p>تشخيص دقيق وخطة علاجية واضحة بإشراف مختصين.</p><button onclick="selectItem('حجز موعد فحص')">احجز موعداً</button></div>
+        <div class="card"><h3>العناية الوقائية</h3><p>متابعة دورية بأحدث الأجهزة لضمان أفضل النتائج.</p><button onclick="selectItem('حجز عناية وقائية')">احجز موعداً</button></div>
+        <div class="card"><h3>الاستشارات الفورية</h3><p>تواصل مباشر للإجابة على استفساراتك الصحية.</p><button onclick="selectItem('استشارة فورية')">تواصل الآن</button></div>
+      ` : `
+        <div class="card"><h3>خدمة احترافية متكاملة</h3><p>نقدم حلولاً عملية مصممة خصيصاً لتلبية أهداف ${title}.</p><button onclick="selectItem('طلب الخدمة الأساسية')">اطلب الخدمة</button></div>
+        <div class="card"><h3>تجربة استخدام سلسة</h3><p>واجهة واضحة وسريعة تعمل بكفاءة على الجوال والكمبيوتر.</p><button onclick="selectItem('طلب الباقة المتقدمة')">اطلب الخدمة</button></div>
+        <div class="card"><h3>دعم ومتابعة مستمرة</h3><p>فريق جاهز لمساعدتك وتطوير مشروعك خطوة بخطوة.</p><button onclick="selectItem('استشارة مشروع')">تواصل معنا</button></div>
+      `;
+
+      return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: #f8fafc; color: #0f172a; line-height: 1.7; }
+    header { background: ${color}; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    nav a { color: #e2e8f0; text-decoration: none; margin-right: 16px; font-size: 0.95rem; }
+    .hero { max-width: 960px; margin: 36px auto; background: #fff; padding: 40px 24px; border-radius: 16px; text-align: center; border: 1px solid #e2e8f0; }
+    .hero h1 { color: ${color}; font-size: 2rem; margin-bottom: 10px; }
+    .hero p { color: #475569; max-width: 600px; margin: 0 auto 20px; }
+    .cta { background: ${accent}; color: #fff; border: none; padding: 12px 26px; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .grid { max-width: 960px; margin: 24px auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; padding: 0 16px; }
+    .card { background: #fff; padding: 22px; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; }
+    .card h3 { color: ${color}; }
+    .price { font-weight: 800; color: ${accent}; font-size: 1.15rem; }
+    .card button { margin-top: auto; background: ${color}; color: #fff; border: none; padding: 9px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .contact { max-width: 580px; margin: 36px auto; background: #fff; padding: 26px; border-radius: 14px; border: 1px solid #e2e8f0; }
+    .contact h2 { margin-bottom: 12px; color: ${color}; }
+    .contact input, .contact textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    footer { text-align: center; padding: 20px; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>${title}</strong>
+    <nav>
+      <a href="#services">الخدمات</a>
+      <a href="#order">تواصل معنا</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>مرحباً بك في ${title}</h1>
+    <p>منصة حديثة مصممة لتقديم أفضل تجربة وخدمة متكاملة لعملائنا بكل سهولة واحترافية.</p>
+    <button class="cta" onclick="document.getElementById('order').scrollIntoView({behavior:'smooth'})">ابدأ الآن</button>
+  </section>
+
+  <section id="services" class="grid">
+    ${sectionHtml}
+  </section>
+
+  <section id="order" class="contact">
+    <h2>أرسل طلبك أو استفسارك</h2>
+    <form onsubmit="sendForm(event)">
+      <input type="text" id="userName" placeholder="الاسم الكامل" required />
+      <textarea id="userMsg" rows="3" placeholder="اكتب تفاصيل طلبك..." required></textarea>
+      <button type="submit" class="cta">إرسال الآن</button>
+    </form>
+    <p id="statusMsg" style="margin-top:10px; color:${color}; font-weight:700;"></p>
+  </section>
+
+  <footer>جميع الحقوق محفوظة © 2026 — ${title}</footer>
+
+  <script>
+    function selectItem(item) {
+      document.getElementById('userMsg').value = 'أرغب في: ' + item;
+      document.getElementById('order').scrollIntoView({ behavior: 'smooth' });
+    }
+    function sendForm(e) {
+      e.preventDefault();
+      const name = document.getElementById('userName').value;
+      document.getElementById('statusMsg').textContent = 'تم استلام طلبك بنجاح يا ' + name + '!';
+      e.target.reset();
+    }
+  <\/script>
+</body>
+</html>`;
+    }
+
+    function startProject() {
+      const idea = document.getElementById("ideaInput").value.trim();
+      if (!idea) return;
+
+      const btn = document.getElementById("startBtn");
+      const meetingBanner = document.getElementById("meetingBanner");
+      const deliveryBox = document.getElementById("deliveryBox");
+
+      btn.disabled = true;
+      btn.textContent = "الفريق يعمل الآن...";
+      deliveryBox.style.display = "none";
+      meetingBanner.style.display = "none";
+
+      // المرحلة 1: البحث والتصميم في صمت وتركيز
+      team[0].status = "working"; team[0].task = `بحث وتحليل محتوى مناسب لـ "${idea}"`;
+      team[1].status = "working"; team[1].task = "تصميم الهوية البصرية وتوزيع الأقسام";
+      team[2].status = "idle";    team[2].task = "في مكتبه بانتظار مخرجات التصميم";
+      team[3].status = "idle";    team[3].task = "في مكتبها بانتظار النسخة الأولية";
+      renderOffice();
+
+      // المرحلة 2: اجتماع قصير فقط إذا كانت الفكرة طويلة وتحتاج تنسيق
+      const needsMeeting = idea.split(" ").length >= 4;
+      setTimeout(() => {
+        if (needsMeeting) {
+          meetingBanner.style.display = "block";
+          meetingBanner.innerHTML = `<strong>اجتماع تنسيقي قصير (سارة + خالد + عمر):</strong> تحديد أقسام "${idea}" ونوع الأزرار والتفاعلات المطلوبة.`;
+          team[0].status = "meeting"; team[0].task = "مراجعة متطلبات المحتوى مع المصمم والمطور";
+          team[1].status = "meeting"; team[1].task = "تأكيد شكل البطاقات والألوان";
+          team[2].status = "meeting"; team[2].task = "استلام المواصفات لبدء البرمجة";
+          team[3].status = "idle";    team[3].task = "بقيت في مكتبها لعدم الحاجة لحضورها الاجتماع";
+          renderOffice();
+        }
+      }, 1300);
+
+      // المرحلة 3: البرمجة والفحص
+      setTimeout(() => {
+        meetingBanner.style.display = "none";
+        team[0].status = "idle";    team[0].task = "أنهت البحث وسلمت المحتوى";
+        team[1].status = "idle";    team[1].task = "أنهى التصميم وسلم الواجهة";
+        team[2].status = "working"; team[2].task = "كتابة ملف HTML + CSS + JavaScript كامل";
+        team[3].status = "working"; team[3].task = "فحص الأزرار والتجاوب على الشاشات";
+        renderOffice();
+      }, 2700);
+
+      // المرحلة 4: التسليم النهائي
+      setTimeout(() => {
+        team.forEach(emp => { emp.status = "idle"; emp.task = "المشروع مكتمل وجاهز للتسليم"; });
+        renderOffice();
+
+        generatedHtml = buildRealSite(idea);
+        document.getElementById("previewFrame").srcdoc = generatedHtml;
+        document.getElementById("codeOutput").value = generatedHtml;
+
+        document.getElementById("doneList").innerHTML = `
+          <li>بناء ملف HTML5 متكامل ومستقل يدعم اللغة العربية (RTL) ويعمل مباشرة في أي متصفح.</li>
+          <li>تصميم واجهة متجاوبة بألوان وأقسام مخصصة لفكرة «${idea}».</li>
+          <li>برمجة تفاعلات JavaScript حقيقية (اختيار الطلبات وتعبئة النموذج تلقائياً).</li>
+        `;
+
+        document.getElementById("todoList").innerHTML = `
+          <li>ربط نموذج الطلبات بقاعدة بيانات (مثل Supabase أو Firebase) لحفظ بيانات العملاء فعلياً.</li>
+          <li>إضافة بوابة دفع إلكتروني (مدى / Apple Pay) إذا كان المشروع يبيع منتجات أو خدمات.</li>
+          <li>رفع ملف <strong>index.html</strong> على استضافة مثل GitHub Pages وربطه باسم نطاق (Domain).</li>
+        `;
+
+        deliveryBox.style.display = "flex";
+        btn.disabled = false;
+        btn.textContent = "ابدأ تنفيذ المشروع";
+      }, 4200);
+    }
+
+    function copyCode() {
+      navigator.clipboard.writeText(generatedHtml);
+      const copyBtn = document.getElementById("copyBtn");
+      copyBtn.textContent = "تم النسخ ✓";
+      setTimeout(() => { copyBtn.textContent = "نسخ كود HTML"; }, 2000);
+    }
+
+    function downloadCode() {
+      const blob = new Blob([generatedHtml], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "index.html";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    renderOffice();
+  </script>
+</body>
+</html>
