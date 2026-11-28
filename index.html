@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>المكتب الذكي — شركة برمجيات افتراضية</title>
+  <title>المكتب الذكي — صانع التطبيقات ومواقع HTML</title>
   <style>
     :root {
       --primary: #065f46;
@@ -30,6 +30,9 @@
     .btn:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-outline { background: #fff; color: var(--text); border: 1px solid #cbd5e1; }
     .btn-outline:hover { background: #f1f5f9; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .chip { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 99px; font-size: 0.8rem; cursor: pointer; }
+    .chip:hover { background: #d1fae5; }
 
     .meeting-banner { display: none; background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; }
 
@@ -52,8 +55,8 @@
 
     .split-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
     .panel h4 { margin-bottom: 8px; font-size: 0.92rem; }
-    iframe { width: 100%; height: 420px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
-    textarea.code-box { width: 100%; height: 420px; background: #0f172a; color: #6ee7b7; border: none; border-radius: 10px; padding: 14px; font-family: monospace; font-size: 0.82rem; direction: ltr; resize: vertical; }
+    iframe { width: 100%; height: 450px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+    textarea.code-box { width: 100%; height: 450px; background: #0f172a; color: #6ee7b7; border: none; border-radius: 10px; padding: 14px; font-family: monospace; font-size: 0.82rem; direction: ltr; resize: vertical; }
 
     .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
     .report-card { padding: 14px; border-radius: 10px; font-size: 0.88rem; }
@@ -67,14 +70,20 @@
   <div class="container">
     <header>
       <h1>المكتب الذكي</h1>
-      <p>أنت المدير التنفيذي. اكتب فكرتك، والفريق يبحث ويصمم ويبرمج ويسلّمك موقع HTML حقيقياً.</p>
+      <p>أنت المدير التنفيذي. اكتب فكرة تطبيق أو لعبة أو أداة، والفريق يبنيها لك بكود HTML حقيقي شغال.</p>
     </header>
 
     <div class="ceo-box">
-      <label for="ideaInput">فكرة المشروع المطلوب تنفيذه:</label>
+      <label for="ideaInput">وش التطبيق أو الفكرة اللي تبي الفريق يبنيها؟</label>
       <div class="input-row">
-        <input id="ideaInput" type="text" placeholder="مثال: متجر قهوة مختصة، أو موقع عيادة أسنان، أو منصة دورات..." />
-        <button id="startBtn" class="btn" onclick="startProject()">ابدأ تنفيذ المشروع</button>
+        <input id="ideaInput" type="text" placeholder="مثال: لعبة جمع نقاط، حاسبة ميزانية ومصاريف، قائمة مهام ونقاط..." />
+        <button id="startBtn" class="btn" onclick="startProject()">ابدأ تنفيذ التطبيق</button>
+      </div>
+      <div class="examples">
+        <span class="chip" onclick="setExample('لعبة تفاعلية لجمع النقاط وتفادي العوائق')">لعبة جمع نقاط</span>
+        <span class="chip" onclick="setExample('تطبيق إدارة المهام والنقاط اليومية')">تطبيق مهام ونقاط</span>
+        <span class="chip" onclick="setExample('حاسبة ميزانية ومصاريف شخصية')">حاسبة ميزانية</span>
+        <span class="chip" onclick="setExample('متجر إلكتروني مع سلة مشتريات وحساب الإجمالي')">متجر بسلة مشتريات</span>
       </div>
     </div>
 
@@ -84,7 +93,7 @@
 
     <div id="deliveryBox" class="delivery">
       <div class="delivery-header">
-        <h2>تم إنجاز المشروع وتسليمه بلغة HTML</h2>
+        <h2 id="deliveryTitle">تم بناء التطبيق وتسليمه بلغة HTML</h2>
         <div class="actions">
           <button id="copyBtn" class="btn btn-outline" onclick="copyCode()">نسخ كود HTML</button>
           <button class="btn" onclick="downloadCode()">تحميل index.html</button>
@@ -93,22 +102,22 @@
 
       <div class="split-view">
         <div class="panel">
-          <h4>معاينة الموقع الحقيقي:</h4>
+          <h4>معاينة التطبيق الحي (تقدر تجربه هنا مباشرة):</h4>
           <iframe id="previewFrame"></iframe>
         </div>
         <div class="panel">
-          <h4>كود HTML الكامل (جاهز للاستخدام):</h4>
+          <h4>كود HTML الكامل للتطبيق:</h4>
           <textarea id="codeOutput" class="code-box" readonly></textarea>
         </div>
       </div>
 
       <div class="report-grid">
         <div class="report-card report-done">
-          <h4>ما تم إنجازه بالتفصيل:</h4>
+          <h4>ما تم إنجازه في هذا التطبيق:</h4>
           <ul id="doneList"></ul>
         </div>
         <div class="report-card report-todo">
-          <h4>ما تبقى لإكمال المشروع وتطويره مستقبلاً:</h4>
+          <h4>ما تبقى لتطويره مستقبلاً:</h4>
           <ul id="todoList"></ul>
         </div>
       </div>
@@ -117,13 +126,17 @@
 
   <script>
     const team = [
-      { id: "res", name: "سارة", role: "باحثة وجمع محتوى", dept: "البحث والتحليل", status: "idle", task: "جالسة على مكتبها بانتظار فكرة المشروع" },
-      { id: "des", name: "خالد", role: "مصمم واجهات UI/UX", dept: "التصميم", status: "idle", task: "جاهز لتخطيط الأقسام والألوان" },
-      { id: "dev", name: "عمر", role: "مطور HTML / CSS / JS", dept: "التطوير", status: "idle", task: "جاهز لبناء الكود الفعلي" },
-      { id: "qa",  name: "نورة", role: "مختبرة جودة QA", dept: "الجودة والتسليم", status: "idle", task: "جاهزة لفحص الموقع قبل التسليم" }
+      { id: "res", name: "سارة", role: "باحثة ومتطلبات التطبيق", dept: "التحليل والبحث", status: "idle", task: "جالسة على مكتبها بانتظار فكرة التطبيق" },
+      { id: "des", name: "خالد", role: "مصمم واجهات تفاعلية", dept: "التصميم", status: "idle", task: "جاهز لتصميم الواجهة والأزرار" },
+      { id: "dev", name: "عمر", role: "مطور تطبيقات HTML/JS", dept: "البرمجة", status: "idle", task: "جاهز لكتابة منطق التطبيق الحقيقي" },
+      { id: "qa",  name: "نورة", role: "مختبرة جودة QA", dept: "الجودة والفحص", status: "idle", task: "جاهزة لاختبار عمل التطبيق" }
     ];
 
     let generatedHtml = "";
+
+    function setExample(text) {
+      document.getElementById("ideaInput").value = text;
+    }
 
     function renderOffice() {
       const grid = document.getElementById("officeGrid");
@@ -143,28 +156,24 @@
       }).join("");
     }
 
-    function buildRealSite(idea) {
+    function buildRealApp(idea) {
       const title = idea.trim();
-      const isShop = /متجر|بيع|قهوة|مطعم|منتج|تسوق|كافيه/.test(title);
-      const isClinic = /عيادة|طبيب|صحة|مستشفى|أسنان/.test(title);
-      const color = isShop ? "#065f46" : isClinic ? "#0369a1" : "#1e293b";
-      const accent = isShop ? "#10b981" : isClinic ? "#0284c7" : "#2563eb";
 
-      const sectionHtml = isShop ? `
-        <div class="card"><h3>المنتج المميز الأول</h3><p>جودة عالية وتجهيز سريع يناسب ذوقك اليومي.</p><span class="price">85 ر.س</span><button onclick="selectItem('المنتج المميز الأول')">اطلب الآن</button></div>
-        <div class="card"><h3>الباقة المتكاملة</h3><p>تشكيلة مختارة بعناية مع توصيل مجاني وسريع.</p><span class="price">160 ر.س</span><button onclick="selectItem('الباقة المتكاملة')">اطلب الآن</button></div>
-        <div class="card"><h3>باقة الضيافة</h3><p>مثالية للمناسبات والجمعات مع تغليف فاخر.</p><span class="price">240 ر.س</span><button onclick="selectItem('باقة الضيافة')">اطلب الآن</button></div>
-      ` : isClinic ? `
-        <div class="card"><h3>الفحص والاستشارة</h3><p>تشخيص دقيق وخطة علاجية واضحة بإشراف مختصين.</p><button onclick="selectItem('حجز موعد فحص')">احجز موعداً</button></div>
-        <div class="card"><h3>العناية الوقائية</h3><p>متابعة دورية بأحدث الأجهزة لضمان أفضل النتائج.</p><button onclick="selectItem('حجز عناية وقائية')">احجز موعداً</button></div>
-        <div class="card"><h3>الاستشارات الفورية</h3><p>تواصل مباشر للإجابة على استفساراتك الصحية.</p><button onclick="selectItem('استشارة فورية')">تواصل الآن</button></div>
-      ` : `
-        <div class="card"><h3>خدمة احترافية متكاملة</h3><p>نقدم حلولاً عملية مصممة خصيصاً لتلبية أهداف ${title}.</p><button onclick="selectItem('طلب الخدمة الأساسية')">اطلب الخدمة</button></div>
-        <div class="card"><h3>تجربة استخدام سلسة</h3><p>واجهة واضحة وسريعة تعمل بكفاءة على الجوال والكمبيوتر.</p><button onclick="selectItem('طلب الباقة المتقدمة')">اطلب الخدمة</button></div>
-        <div class="card"><h3>دعم ومتابعة مستمرة</h3><p>فريق جاهز لمساعدتك وتطوير مشروعك خطوة بخطوة.</p><button onclick="selectItem('استشارة مشروع')">تواصل معنا</button></div>
-      `;
-
-      return `<!DOCTYPE html>
+      // 1) تطبيق لعبة تفاعلية حقيقية على Canvas
+      if (/لعبة|جيم|نقاط|مغامرة|سباق|تفادي|جمع/.test(title)) {
+        return {
+          appType: "لعبة ويب تفاعلية (HTML5 Canvas)",
+          done: [
+            "بناء محرك لعبة حقيقي على Canvas مع تحكم بالأسهم أو الماوس/اللمس.",
+            "نظام حساب النقاط، تسجيل أعلى نتيجة محلياً، وإعادة اللعب الفورية.",
+            "تنسيق داكن مريح للعين داخل ملف HTML واحد مستقل."
+          ],
+          todo: [
+            "إضافة مؤثرات صوتية وموسيقى خلفية قابلة للكتم.",
+            "إضافة مراحل متعددة ومستويات صعوبة متدرجة.",
+            "ربط لوحة صدارة عالمية لحفظ نتائج اللاعبين."
+          ],
+          html: `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -172,69 +181,311 @@
   <title>${title}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-    body { background: #f8fafc; color: #0f172a; line-height: 1.7; }
-    header { background: ${color}; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
-    nav a { color: #e2e8f0; text-decoration: none; margin-right: 16px; font-size: 0.95rem; }
-    .hero { max-width: 960px; margin: 36px auto; background: #fff; padding: 40px 24px; border-radius: 16px; text-align: center; border: 1px solid #e2e8f0; }
-    .hero h1 { color: ${color}; font-size: 2rem; margin-bottom: 10px; }
-    .hero p { color: #475569; max-width: 600px; margin: 0 auto 20px; }
-    .cta { background: ${accent}; color: #fff; border: none; padding: 12px 26px; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; }
-    .grid { max-width: 960px; margin: 24px auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; padding: 0 16px; }
-    .card { background: #fff; padding: 22px; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; }
-    .card h3 { color: ${color}; }
-    .price { font-weight: 800; color: ${accent}; font-size: 1.15rem; }
-    .card button { margin-top: auto; background: ${color}; color: #fff; border: none; padding: 9px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-    .contact { max-width: 580px; margin: 36px auto; background: #fff; padding: 26px; border-radius: 14px; border: 1px solid #e2e8f0; }
-    .contact h2 { margin-bottom: 12px; color: ${color}; }
-    .contact input, .contact textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
-    footer { text-align: center; padding: 20px; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 40px; }
+    body { background: #0f172a; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; gap: 12px; }
+    .hud { display: flex; gap: 20px; background: #1e293b; padding: 10px 20px; border-radius: 12px; font-weight: 700; }
+    canvas { background: #020617; border: 2px solid #10b981; border-radius: 14px; max-width: 100%; touch-action: none; }
+    .controls { display: flex; gap: 10px; }
+    button { background: #10b981; color: #022c22; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 800; cursor: pointer; }
   </style>
 </head>
 <body>
-  <header>
-    <strong>${title}</strong>
-    <nav>
-      <a href="#services">الخدمات</a>
-      <a href="#order">تواصل معنا</a>
-    </nav>
-  </header>
-
-  <section class="hero">
-    <h1>مرحباً بك في ${title}</h1>
-    <p>منصة حديثة مصممة لتقديم أفضل تجربة وخدمة متكاملة لعملائنا بكل سهولة واحترافية.</p>
-    <button class="cta" onclick="document.getElementById('order').scrollIntoView({behavior:'smooth'})">ابدأ الآن</button>
-  </section>
-
-  <section id="services" class="grid">
-    ${sectionHtml}
-  </section>
-
-  <section id="order" class="contact">
-    <h2>أرسل طلبك أو استفسارك</h2>
-    <form onsubmit="sendForm(event)">
-      <input type="text" id="userName" placeholder="الاسم الكامل" required />
-      <textarea id="userMsg" rows="3" placeholder="اكتب تفاصيل طلبك..." required></textarea>
-      <button type="submit" class="cta">إرسال الآن</button>
-    </form>
-    <p id="statusMsg" style="margin-top:10px; color:${color}; font-weight:700;"></p>
-  </section>
-
-  <footer>جميع الحقوق محفوظة © 2026 — ${title}</footer>
-
+  <h2>${title}</h2>
+  <div class="hud">
+    <div>النقاط: <span id="score">0</span></div>
+    <div>الأعلى: <span id="best">0</span></div>
+  </div>
+  <canvas id="game" width="440" height="300"></canvas>
+  <div class="controls">
+    <button onclick="moveLeft()">يسار ◀</button>
+    <button onclick="restartGame()">إعادة تشغيل</button>
+    <button onclick="moveRight()">يمين ▶</button>
+  </div>
   <script>
-    function selectItem(item) {
-      document.getElementById('userMsg').value = 'أرغب في: ' + item;
-      document.getElementById('order').scrollIntoView({ behavior: 'smooth' });
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    let playerX = 200, score = 0, best = Number(localStorage.getItem("best_score") || 0), gameOver = false;
+    let items = [];
+    document.getElementById("best").textContent = best;
+
+    function moveLeft() { playerX = Math.max(0, playerX - 35); }
+    function moveRight() { playerX = Math.min(canvas.width - 44, playerX + 35); }
+    window.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft" || e.key === "a") moveLeft();
+      if (e.key === "ArrowRight" || e.key === "d") moveRight();
+    });
+
+    function spawnItem() {
+      if (gameOver) return;
+      const isGood = Math.random() > 0.3;
+      items.push({ x: Math.random() * (canvas.width - 24), y: -20, speed: 2.2 + Math.min(4, score * 0.1), isGood });
     }
-    function sendForm(e) {
-      e.preventDefault();
-      const name = document.getElementById('userName').value;
-      document.getElementById('statusMsg').textContent = 'تم استلام طلبك بنجاح يا ' + name + '!';
-      e.target.reset();
+
+    function restartGame() {
+      score = 0; items = []; gameOver = false; playerX = 200;
+      document.getElementById("score").textContent = "0";
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // اللاعب
+      ctx.fillStyle = "#34d399";
+      ctx.fillRect(playerX, canvas.height - 28, 44, 16);
+
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (!gameOver) it.y += it.speed;
+        ctx.fillStyle = it.isGood ? "#fbbf24" : "#f43f5e";
+        ctx.beginPath();
+        ctx.arc(it.x + 10, it.y + 10, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        const hitPlayer = it.y + 20 >= canvas.height - 28 && it.y <= canvas.height - 12 && it.x + 20 >= playerX && it.x <= playerX + 44;
+        if (hitPlayer) {
+          if (it.isGood) {
+            score += 10;
+            document.getElementById("score").textContent = score;
+            if (score > best) { best = score; localStorage.setItem("best_score", best); document.getElementById("best").textContent = best; }
+          } else {
+            gameOver = true;
+          }
+          items.splice(i, 1);
+          continue;
+        }
+        if (it.y > canvas.height) items.splice(i, 1);
+      }
+
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 22px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText("انتهت الجولة! اضغط إعادة تشغيل", canvas.width / 2, canvas.height / 2);
+      }
+      requestAnimationFrame(loop);
+    }
+
+    setInterval(spawnItem, 850);
+    loop();
+  <\/script>
+</body>
+</html>`
+        };
+      }
+
+      // 2) تطبيق إدارة مهام ونقاط
+      if (/مهام|نقاط|تودو|قائمة|عائلة|إنتاجية|جدول/.test(title)) {
+        return {
+          appType: "تطبيق مهام ونقاط تفاعلي",
+          done: [
+            "إضافة مهام جديدة مع تحديد عدد النقاط لكل مهمة.",
+            "تعليم المهام كمنجزة وحساب إجمالي النقاط تلقائياً وحفظها في المتصفح.",
+            "إمكانية حذف المهام وتصفية القائمة."
+          ],
+          todo: [
+            "ربط التطبيق بقاعدة بيانات سحابية لمزامنة النقاط بين الأجهزة.",
+            "إضافة حسابات متعددة للمستخدمين ومتجر مكافآت.",
+            "إضافة إشعارات وتقارير أسبوعية."
+          ],
+          html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: #f1f5f9; color: #0f172a; padding: 20px; }
+    .app { max-width: 560px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; }
+    .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .points { background: #d1fae5; color: #065f46; padding: 6px 14px; border-radius: 99px; font-weight: 800; }
+    .row { display: flex; gap: 8px; margin-bottom: 16px; }
+    input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
+    input[type="text"] { flex: 1; }
+    input[type="number"] { width: 95px; }
+    button { background: #065f46; color: #fff; border: none; padding: 9px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    li { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0; }
+    .done { text-decoration: line-through; color: #94a3b8; }
+    .small-btn { background: #e2e8f0; color: #0f172a; padding: 5px 10px; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <h2>${title}</h2>
+      <div class="points">النقاط: <span id="totalPts">0</span></div>
+    </div>
+    <div class="row">
+      <input id="taskName" type="text" placeholder="اكتب مهمة جديدة..." />
+      <input id="taskPts" type="number" value="10" min="1" />
+      <button onclick="addTask()">إضافة</button>
+    </div>
+    <ul id="list"></ul>
+  </div>
+  <script>
+    let tasks = JSON.parse(localStorage.getItem("smart_tasks") || '[{"title":"إنجاز أول مهمة","pts":15,"done":false}]');
+    function saveAndRender() {
+      localStorage.setItem("smart_tasks", JSON.stringify(tasks));
+      const list = document.getElementById("list");
+      let total = 0;
+      list.innerHTML = tasks.map((t, i) => {
+        if (t.done) total += Number(t.pts || 0);
+        return \`<li>
+          <span class="\${t.done ? 'done' : ''}" onclick="toggleTask(\${i})" style="cursor:pointer">\${t.title} (+\${t.pts} نقطة)</span>
+          <div style="display:flex;gap:6px">
+            <button class="small-btn" onclick="toggleTask(\${i})">\${t.done ? 'إلغاء' : 'إنجاز'}</button>
+            <button class="small-btn" onclick="deleteTask(\${i})">حذف</button>
+          </div>
+        </li>\`;
+      }).join("");
+      document.getElementById("totalPts").textContent = total;
+    }
+    function addTask() {
+      const inp = document.getElementById("taskName");
+      const pts = Number(document.getElementById("taskPts").value || 10);
+      if (!inp.value.trim()) return;
+      tasks.push({ title: inp.value.trim(), pts, done: false });
+      inp.value = "";
+      saveAndRender();
+    }
+    function toggleTask(i) { tasks[i].done = !tasks[i].done; saveAndRender(); }
+    function deleteTask(i) { tasks.splice(i, 1); saveAndRender(); }
+    saveAndRender();
+  <\/script>
+</body>
+</html>`
+        };
+      }
+
+      // 3) تطبيق متجر بسلة مشتريات أو حاسبة ميزانية
+      const isCalc = /حاسبة|ميزانية|مصاريف|حساب|ادخار|راتب/.test(title);
+      return {
+        appType: isCalc ? "تطبيق حاسبة وميزانية تفاعلي" : "تطبيق متجر وسلة مشتريات تفاعلي",
+        done: [
+          isCalc
+            ? "حساب الدخل والمصاريف والرصيد المتبقي لحظياً مع سجل عمليات قابل للحذف."
+            : "إضافة المنتجات إلى السلة، حساب الإجمالي التلقائي، وإتمام الطلب برسالة تأكيد.",
+          "واجهة عربية مرتبة وجاهزة للعمل مباشرة داخل أي متصفح."
+        ],
+        todo: [
+          "ربط البيانات بقاعدة بيانات حقيقية أو ملف تصدير Excel/CSV.",
+          "إضافة بوابة دفع أو رسوم بيانية تحليلية متقدمة."
+        ],
+        html: isCalc ? `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: #f8fafc; padding: 20px; color: #0f172a; }
+    .box { max-width: 560px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; }
+    .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+    .stat { background: #f1f5f9; padding: 12px; border-radius: 10px; text-align: center; }
+    .stat strong { display: block; font-size: 1.15rem; color: #065f46; }
+    .form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    input, select { padding: 9px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    button { background: #065f46; color: #fff; border: none; padding: 9px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    li { display: flex; justify-content: space-between; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>${title}</h2>
+    <div class="summary">
+      <div class="stat"><span>الدخل</span><strong id="inc">0</strong></div>
+      <div class="stat"><span>المصاريف</span><strong id="exp" style="color:#b91c1c">0</strong></div>
+      <div class="stat"><span>المتبقي</span><strong id="bal">0</strong></div>
+    </div>
+    <div class="form">
+      <input id="desc" type="text" placeholder="الوصف (مثال: راتب / قهوة)" style="flex:1" />
+      <input id="amt" type="number" placeholder="المبلغ" style="width:100px" />
+      <select id="type"><option value="inc">دخل</option><option value="exp">مصروف</option></select>
+      <button onclick="addItem()">إضافة</button>
+    </div>
+    <ul id="items"></ul>
+  </div>
+  <script>
+    let rows = [];
+    function render() {
+      let inc = 0, exp = 0;
+      document.getElementById("items").innerHTML = rows.map((r, i) => {
+        if (r.type === "inc") inc += r.amt; else exp += r.amt;
+        return \`<li><span>\${r.desc} (\${r.type === 'inc' ? 'دخل' : 'مصروف'})</span><strong>\${r.amt}</strong></li>\`;
+      }).join("");
+      document.getElementById("inc").textContent = inc;
+      document.getElementById("exp").textContent = exp;
+      document.getElementById("bal").textContent = inc - exp;
+    }
+    function addItem() {
+      const desc = document.getElementById("desc").value.trim();
+      const amt = Number(document.getElementById("amt").value);
+      const type = document.getElementById("type").value;
+      if (!desc || !amt) return;
+      rows.push({ desc, amt, type });
+      document.getElementById("desc").value = "";
+      document.getElementById("amt").value = "";
+      render();
+    }
+    render();
+  <\/script>
+</body>
+</html>` : `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: #f8fafc; padding: 20px; color: #0f172a; }
+    .wrap { max-width: 820px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+    @media (max-width: 680px) { .wrap { grid-template-columns: 1fr; } }
+    .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+    .card, .cart { background: #fff; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; }
+    button { background: #065f46; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2 style="max-width:820px;margin:0 auto 14px">${title}</h2>
+  <div class="wrap">
+    <div class="products" id="prods"></div>
+    <div class="cart">
+      <h3>سلة المشتريات</h3>
+      <ul id="cartList" style="list-style:none;margin:10px 0;font-size:0.9rem"></ul>
+      <div>الإجمالي: <strong id="total">0</strong> ر.س</div>
+      <button onclick="checkout()">إتمام الطلب</button>
+      <p id="msg" style="margin-top:8px;color:#065f46;font-weight:700;font-size:0.85rem"></p>
+    </div>
+  </div>
+  <script>
+    const catalog = [
+      { name: "منتج رقم 1", price: 45 },
+      { name: "منتج رقم 2", price: 80 },
+      { name: "منتج رقم 3", price: 120 }
+    ];
+    let cart = [];
+    document.getElementById("prods").innerHTML = catalog.map((p, idx) => \`
+      <div class="card"><h4>\${p.name}</h4><p style="color:#065f46;font-weight:800">\${p.price} ر.س</p><button onclick="addToCart(\${idx})">أضف للسلة</button></div>
+    \`).join("");
+    function addToCart(idx) { cart.push(catalog[idx]); renderCart(); }
+    function renderCart() {
+      document.getElementById("cartList").innerHTML = cart.map(c => \`<li>• \${c.name} — \${c.price} ر.س</li>\`).join("");
+      document.getElementById("total").textContent = cart.reduce((s, c) => s + c.price, 0);
+    }
+    function checkout() {
+      if (!cart.length) return;
+      document.getElementById("msg").textContent = "تم تأكيد طلبك بنجاح!";
+      cart = []; renderCart();
     }
   <\/script>
 </body>
-</html>`;
+</html>`
+        };
+      }
     }
 
     function startProject() {
@@ -246,66 +497,55 @@
       const deliveryBox = document.getElementById("deliveryBox");
 
       btn.disabled = true;
-      btn.textContent = "الفريق يعمل الآن...";
+      btn.textContent = "الفريق يبني التطبيق...";
       deliveryBox.style.display = "none";
       meetingBanner.style.display = "none";
 
-      // المرحلة 1: البحث والتصميم في صمت وتركيز
-      team[0].status = "working"; team[0].task = `بحث وتحليل محتوى مناسب لـ "${idea}"`;
-      team[1].status = "working"; team[1].task = "تصميم الهوية البصرية وتوزيع الأقسام";
-      team[2].status = "idle";    team[2].task = "في مكتبه بانتظار مخرجات التصميم";
-      team[3].status = "idle";    team[3].task = "في مكتبها بانتظار النسخة الأولية";
+      team[0].status = "working"; team[0].task = `تحليل متطلبات تطبيق "${idea}"`;
+      team[1].status = "working"; team[1].task = "تصميم واجهة التطبيق وأزرار التحكم";
+      team[2].status = "idle";    team[2].task = "على مكتبه بانتظار المخطط";
+      team[3].status = "idle";    team[3].task = "على مكتبها بانتظار النسخة الأولية";
       renderOffice();
 
-      // المرحلة 2: اجتماع قصير فقط إذا كانت الفكرة طويلة وتحتاج تنسيق
       const needsMeeting = idea.split(" ").length >= 4;
       setTimeout(() => {
         if (needsMeeting) {
           meetingBanner.style.display = "block";
-          meetingBanner.innerHTML = `<strong>اجتماع تنسيقي قصير (سارة + خالد + عمر):</strong> تحديد أقسام "${idea}" ونوع الأزرار والتفاعلات المطلوبة.`;
-          team[0].status = "meeting"; team[0].task = "مراجعة متطلبات المحتوى مع المصمم والمطور";
-          team[1].status = "meeting"; team[1].task = "تأكيد شكل البطاقات والألوان";
-          team[2].status = "meeting"; team[2].task = "استلام المواصفات لبدء البرمجة";
-          team[3].status = "idle";    team[3].task = "بقيت في مكتبها لعدم الحاجة لحضورها الاجتماع";
+          meetingBanner.innerHTML = `<strong>تنسيق سريع (سارة + خالد + عمر):</strong> تحديد منطق التطبيق ومزاياه لـ «${idea}».`;
+          team[0].status = "meeting"; team[0].task = "توضيح متطلبات الفكرة";
+          team[1].status = "meeting"; team[1].task = "تأكيد شكل الواجهة";
+          team[2].status = "meeting"; team[2].task = "استلام منطق البرمجة";
+          team[3].status = "idle";    team[3].task = "في مكتبها لعدم حاجة الاجتماع لها";
           renderOffice();
         }
-      }, 1300);
+      }, 1200);
 
-      // المرحلة 3: البرمجة والفحص
       setTimeout(() => {
         meetingBanner.style.display = "none";
-        team[0].status = "idle";    team[0].task = "أنهت البحث وسلمت المحتوى";
-        team[1].status = "idle";    team[1].task = "أنهى التصميم وسلم الواجهة";
-        team[2].status = "working"; team[2].task = "كتابة ملف HTML + CSS + JavaScript كامل";
-        team[3].status = "working"; team[3].task = "فحص الأزرار والتجاوب على الشاشات";
+        team[0].status = "idle";    team[0].task = "أنهت التحليل";
+        team[1].status = "idle";    team[1].task = "أنهى التصميم";
+        team[2].status = "working"; team[2].task = "برمجة التطبيق بالكامل داخل HTML + JS";
+        team[3].status = "working"; team[3].task = "اختبار عمل التطبيق والنتائج";
         renderOffice();
-      }, 2700);
+      }, 2500);
 
-      // المرحلة 4: التسليم النهائي
       setTimeout(() => {
-        team.forEach(emp => { emp.status = "idle"; emp.task = "المشروع مكتمل وجاهز للتسليم"; });
+        team.forEach(emp => { emp.status = "idle"; emp.task = "التطبيق جاهز وتم تسليمه"; });
         renderOffice();
 
-        generatedHtml = buildRealSite(idea);
+        const built = buildRealApp(idea);
+        generatedHtml = built.html;
+        document.getElementById("deliveryTitle").textContent = `تم بناء: ${built.appType}`;
         document.getElementById("previewFrame").srcdoc = generatedHtml;
         document.getElementById("codeOutput").value = generatedHtml;
 
-        document.getElementById("doneList").innerHTML = `
-          <li>بناء ملف HTML5 متكامل ومستقل يدعم اللغة العربية (RTL) ويعمل مباشرة في أي متصفح.</li>
-          <li>تصميم واجهة متجاوبة بألوان وأقسام مخصصة لفكرة «${idea}».</li>
-          <li>برمجة تفاعلات JavaScript حقيقية (اختيار الطلبات وتعبئة النموذج تلقائياً).</li>
-        `;
-
-        document.getElementById("todoList").innerHTML = `
-          <li>ربط نموذج الطلبات بقاعدة بيانات (مثل Supabase أو Firebase) لحفظ بيانات العملاء فعلياً.</li>
-          <li>إضافة بوابة دفع إلكتروني (مدى / Apple Pay) إذا كان المشروع يبيع منتجات أو خدمات.</li>
-          <li>رفع ملف <strong>index.html</strong> على استضافة مثل GitHub Pages وربطه باسم نطاق (Domain).</li>
-        `;
+        document.getElementById("doneList").innerHTML = built.done.map(x => `<li>${x}</li>`).join("");
+        document.getElementById("todoList").innerHTML = built.todo.map(x => `<li>${x}</li>`).join("");
 
         deliveryBox.style.display = "flex";
         btn.disabled = false;
-        btn.textContent = "ابدأ تنفيذ المشروع";
-      }, 4200);
+        btn.textContent = "ابدأ تنفيذ التطبيق";
+      }, 3900);
     }
 
     function copyCode() {
